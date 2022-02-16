@@ -1,3 +1,4 @@
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApi.Data.DAL;
+using WebApi.Dto.ProductDto;
 
 namespace WebApi
 {
@@ -27,15 +29,11 @@ namespace WebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers().AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<ProductCreateValidator>()); ;
             services.AddDbContext<Context>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"))
             );
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v0.1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "My API", Version = "v0.1" });
-            });
-
+           
 
         }
 
@@ -46,11 +44,6 @@ namespace WebApi
             {
                 app.UseDeveloperExceptionPage();
             }
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v0.1/swagger.json", "My API V1");
-            });
             app.UseHttpsRedirection();
 
             app.UseRouting();

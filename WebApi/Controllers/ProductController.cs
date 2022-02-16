@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebApi.Data.DAL;
 using WebApi.Data.Entity;
+using WebApi.Dto.ProductDto;
 
 namespace WebApi.Controllers
 {
@@ -21,9 +22,25 @@ namespace WebApi.Controllers
         }
 
         [HttpGet]
-        public List<Product> Get()
+        public IActionResult Get(int page=1)
         {
-            return _context.Products.ToList();
+
+            var query = _context.Products.AsQueryable();
+            ProductReturnDto productRetrunDto = new ProductReturnDto
+            {
+                TotalCount = query.Count(),
+                Items=query.Skip((page-1)*5).Take(5).Select(p=>new ProductItemDto
+                {
+                    Name=p.Name,
+                    IsDelete=p.IsDelete,
+                    Price=p.Price,
+                    CreatedAt=p.CreatedAt,
+                    UpdatedAt=p.UpdatedAt
+                }).ToList()
+            };
+            
+           
+            return Ok(productRetrunDto);
         }
         [Route("{id}")]
         [HttpGet]
@@ -36,21 +53,45 @@ namespace WebApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(Product product)
+        public IActionResult Create(ProductCreateDto productCreateDto)
         {
-            _context.Products.Add(product);
+            Product newProduct = new Product
+            {
+                Name = productCreateDto.Name,
+                Price = productCreateDto.Price,
+                IsDelete = productCreateDto.IsDelete
+            };
+
+            _context.Products.Add(newProduct);
             _context.SaveChanges();
             return StatusCode(201);
         }
         [HttpPut("{id}")]
-        public IActionResult Update(int id,Product product)
+        public IActionResult Update(int id,ProductUpdateDto  productUpdateDto)
         {
             Product dbProduct = _context.Products.FirstOrDefault(p => p.Id == id);
             if (dbProduct == null) return NotFound();
-            dbProduct.Name = product.Name;
-            dbProduct.Price = product.Price;
+            dbProduct.Name = productUpdateDto.Name;
+            dbProduct.Price = productUpdateDto.Price;
+            dbProduct.IsDelete = productUpdateDto.IsDelete;
             _context.SaveChanges();
             return StatusCode(200);
+        }
+
+        [HttpDelete("{id}")]
+
+        public IActionResult Remove(int? id)
+        {
+            if (id == null) return NotFound();
+
+            Product dbProduct = _context.Products.FirstOrDefault(p => p.Id == id);
+            if (dbProduct == null) return NotFound();
+
+            _context.Remove(dbProduct);
+            _context.SaveChanges();
+
+            return NoContent();
+
         }
 
        
